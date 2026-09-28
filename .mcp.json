@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "linkedin-jobs": {
+      "command": "python3",
+      "args": ["${CLAUDE_PROJECT_DIR:-.}/mcp/linkedin-jobs/server.py"]
+    }
+  }
+}

@@ -1,0 +1,16 @@
+name: checks
+on: [push, pull_request]
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: No personal data outside profile/
+        run: python3 scripts/leak_check.py
+      - name: Resume-safety hook tests
+        run: python3 tests/test_cv_guard.py
+      - name: Scripts compile
+        run: python3 -m py_compile .claude/hooks/*.py scripts/*.py mcp/linkedin-jobs/server.py skills/*/scripts/*.py

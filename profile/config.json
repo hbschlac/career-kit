@@ -1,0 +1,11 @@
+{
+  "name": "<Your Full Name>",
+  "email": "<you@example.com>",
+  "phone": "<optional>",
+  "linkedin": "<linkedin.com/in/your-handle>",
+  "website": "<optional: your portfolio or site>",
+  "pipeline_sheet_id": "<Google Sheet ID of your tracker: the long string between /d/ and /edit>",
+  "pipeline_tab": "<tab name, e.g. Oct-2026>",
+  "cv_folder_id": "<Google Drive folder ID where your resume docs live>",
+  "base_cv_doc_id": "<Google Doc ID of your best current resume: every tailored CV starts as a copy of it>"
+}

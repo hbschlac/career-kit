@@ -1,0 +1,56 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Composio_Docs_Drive",
+      "mcp__claude_ai_Composio_Docs_Drive",
+      "mcp__linkedin-jobs"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "linkedin-jobs"
+  ],
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/session_start.py\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "mcp__.*__COMPOSIO_MULTI_EXECUTE_TOOL|mcp__.*__(read_file_content|download_file_content)|mcp__.*__(find_and_replace_doc|import_to_google_doc)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/cv_guard.py\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "mcp__.*__COMPOSIO_MULTI_EXECUTE_TOOL|mcp__.*__(read_file_content|download_file_content)|mcp__.*__(get_doc_content|find_and_replace_doc)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/cv_guard.py\""
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/scripts/session_meter.py\" --append"
+          }
+        ]
+      }
+    ]
+  }
+}
