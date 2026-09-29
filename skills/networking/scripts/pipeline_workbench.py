@@ -98,8 +98,11 @@ METER_HEAD = ["date", "session", "kind", "doc_edits", "readbacks", "pdf_pulls", 
               "user_messages", "peak_context_k", "input_k", "output_k", "compactions", "note"]
 
 
-def meter_row(m, kind="cv", note="", dry_run=False):
-    """Append one session's meter dict to the Meter tab. Creates the tab on first use."""
+def meter_row(m, kind=None, note="", dry_run=False):
+    """Append one session's meter dict to the Meter tab. Creates the tab on first use.
+    kind defaults to the session's first kit skill; the skills used go in the note column."""
+    kind = kind or (m.get("skills") or ["session"])[0]
+    note = note or ("skills: " + ", ".join(m.get("skills") or []) if m.get("skills") else "")
     if METER_TAB not in tabs():
         if dry_run: return f"DRY RUN - would create tab {METER_TAB}"
         run_composio_tool("GOOGLESHEETS_ADD_SHEET", {"spreadsheet_id": S, "title": METER_TAB,

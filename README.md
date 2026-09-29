@@ -37,8 +37,8 @@ in the chat. Each connector unlocks more:
 | Connector | Unlocks | How |
 |-----------|---------|-----|
 | **GitHub** (required) | Claude can open your copy of the kit | claude.ai/code prompts you the first time. Pick your new repo when you start a session |
-| **Google Drive** + **Google Docs** | Tailored resumes edited right in your Google Doc, PDF export | [claude.ai/customize/connectors](https://claude.ai/customize/connectors) → connect Google Drive (and Google Docs if listed) |
-| **Gmail** (read-only use) | `career-review` finds recruiter replies and rejections | Same page → Gmail |
+| **Google Drive** + **Google Docs** | Claude reads every resume you've saved (any year you pick) and your work samples for facts, then edits a copy of your resume right in Google Docs and exports the PDF | [claude.ai/customize/connectors](https://claude.ai/customize/connectors) → connect Google Drive (and Google Docs if listed) |
+| **Gmail** (read-only use) | Claude learns your voice from emails you've sent, reads the earlier thread before a follow-up, and `career-review` finds recruiter replies and rejections. It never sends | Same page → Gmail |
 | **Composio** (optional, free plan) | The Google Sheets job tracker, plus a second path for Docs edits | One link, added on the same connectors page. Steps below |
 | **LinkedIn jobs** | Search LinkedIn postings, pull full job descriptions | Nothing to do. It's bundled in this repo (`mcp/linkedin-jobs`) and uses LinkedIn's public job pages, no login |
 
@@ -91,6 +91,8 @@ profile/          ← YOU. The only folder with personal data. Private to your c
   rules.md          your personal rules (grows as you correct Claude)
   targets.md        roles, industries, locations, comp, dealbreakers
   contacts.md       warm contacts for referrals (optional)
+  tailored.md       every resume tailored to a job, so a similar job can start from it
+  meter.md          token use per session, when there's no tracker sheet (created on first use)
   config.json       your tracker sheet ID, resume doc ID, contact details
 skills/           ← the engine: generic workflows, no personal data
 .claude/          ← skill links + safety hooks (see below)
@@ -104,6 +106,13 @@ that wreck a resume: a whole-document rewrite that wipes formatting, a find-and-
 matches the wrong text or matches twice, and editing before checking your facts. It also blocks
 reading your whole tracker into the chat, which costs a lot of tokens. When it blocks something,
 it says why. Hooks only load when **this repo is the only repo in the session**.
+
+**It gets better the more you use it.** Three loops, all in your private copy. Say "learn from
+this" after correcting a draft and the correction becomes a rule. Every tailored resume is logged
+in `profile/tailored.md`, so the next similar job starts from the closest version instead of from
+scratch. And every session records its token use and which skills it ran. The weekly
+`career-review` finds the skill that costs the most, proposes a fix as a pull request you approve,
+and checks the next week whether the cost came down.
 
 **Privacy note on the line-fit check.** `cvcheck.sh` reads a resume copy through Google's
 link-sharing export, so it asks you to set that copy to *Anyone with the link: Viewer*. While it is

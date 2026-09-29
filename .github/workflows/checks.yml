@@ -12,5 +12,7 @@ jobs:
         run: python3 scripts/leak_check.py
       - name: Resume-safety hook tests
         run: python3 tests/test_cv_guard.py
+      - name: Session meter tests
+        run: python3 tests/test_session_meter.py
       - name: Scripts compile
         run: python3 -m py_compile .claude/hooks/*.py scripts/*.py mcp/linkedin-jobs/server.py skills/*/scripts/*.py

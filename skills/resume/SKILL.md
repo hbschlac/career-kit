@@ -6,8 +6,9 @@ description: >
   application, rewrite bullets to match a job description, or export a finished resume. Runs a
   gated workflow: facts from the user's evidence ledger first, then a full swap list written in
   chat, a voice pass, a before/after ATS score, one round of targeted Google Docs edits on a copy
-  of the base resume, and a PDF export. Triggers: "tailor my resume", "resume for this job",
-  "update my CV", "resume skill", "export my resume".
+  of the base resume (or of the closest resume already tailored for a similar job), and a PDF
+  export. Triggers: "tailor my resume", "resume for this job", "update my CV", "resume skill",
+  "export my resume", "use the resume I made for <company>", "reuse my <company> resume".
 ---
 
 # Resume — five gates, one file per gate
@@ -57,9 +58,10 @@ is empty or still holds template placeholders (`<…>` / `TODO`), say which one 
     The user's rules override the generic defaults here where they conflict.
 
 ## Gate 0 — Facts → `references/step0-facts.md`
-Get the JD. Parse it into requirements. `bash skills/resume/scripts/ledger_grep.sh <term> …` per
-requirement. One batched question for the real gaps; append the answers. **No drafting until this
-closes.**
+Get the JD. Parse it into requirements. Check `profile/tailored.md` for a past version to start
+from (*Start from the closest past version* in the reference). Run
+`bash skills/resume/scripts/ledger_grep.sh <term> …` per requirement. One batched question for the
+real gaps and the starting version; append the answers. **No drafting until this closes.**
 
 ## Gate 1 — Write → `references/step1-write.md` + `references/resume-rules.md`
 Draft **all** bullets, the tagline and the skills line in the conversation as a from→to swap list.
@@ -98,11 +100,12 @@ how one bullet ends up with many versions.
 
 ## After the session
 
-1. **Meter it.** Run `python3 scripts/session_meter.py` and show the user the summary. If the
-   tracker is set up (`pipeline_sheet_id` in `profile/config.json`), also run
-   `python3 scripts/session_meter.py --json` and, with the Pipeline workbench helpers loaded,
-   `print(meter_row(<that dict>, kind="cv"))`. Counts only, never transcript text. `career-review`
-   reads these rows.
-2. **Capture corrections.** If the user gave meaningful corrections this session (verbs, phrasing, workflow, slop flags,
+1. **Log the version.** Add one line to `profile/tailored.md`: date, company, role, role family,
+   the JD's top 3 themes, doc link, final score, status (draft / final / sent). Put the doc link in
+   the tracker's column I (*CV for this app*) and the doc it was copied from in column H. This line
+   is what lets the next similar job start from this one.
+2. **Meter it.** Follow *End of every session* in `CLAUDE.md` (kind `cv`). `career-review` reads
+   those rows to find what costs the most and propose fixes.
+3. **Capture corrections.** If the user gave meaningful corrections this session (verbs, phrasing, workflow, slop flags,
 facts), suggest running `resume-learn`. It writes personal rules to `profile/rules.md`, voice
 rules to `profile/voice.md` and facts to `profile/evidence.md`, never into `skills/`.
