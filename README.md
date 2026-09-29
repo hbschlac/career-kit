@@ -39,8 +39,23 @@ in the chat. Each connector unlocks more:
 | **GitHub** (required) | Claude can open your copy of the kit | claude.ai/code prompts you the first time. Pick your new repo when you start a session |
 | **Google Drive** + **Google Docs** | Tailored resumes edited right in your Google Doc, PDF export | [claude.ai/customize/connectors](https://claude.ai/customize/connectors) → connect Google Drive (and Google Docs if listed) |
 | **Gmail** (read-only use) | `career-review` finds recruiter replies and rejections | Same page → Gmail |
-| **Composio** (optional, free tier) | The Google Sheets job tracker, plus a second path for Docs edits | Make an account at [composio.dev](https://composio.dev), connect its Google Sheets, Docs and Drive toolkits, then add its MCP server as a custom connector on the same connectors page |
+| **Composio** (optional, free plan) | The Google Sheets job tracker, plus a second path for Docs edits | One link, added on the same connectors page. Steps below |
 | **LinkedIn jobs** | Search LinkedIn postings, pull full job descriptions | Nothing to do. It's bundled in this repo (`mcp/linkedin-jobs`) and uses LinkedIn's public job pages, no login |
+
+**Adding Composio** (optional). There's nothing to set up on composio.dev first:
+
+1. On [claude.ai/customize/connectors](https://claude.ai/customize/connectors), click **+**, then
+   **Add custom connector**.
+2. Name it `Composio` and paste this URL: `https://connect.composio.dev/mcp`. Leave
+   **Advanced settings** empty and click **Add**.
+3. Click **Connect**, then **Continue with Google** (or **Sign up**) in the Composio window. That
+   creates your free Composio account. No credit card.
+4. That's it. The first time Claude needs Google Sheets, Docs or Drive through Composio, it gives
+   you a sign-in link. Click it, pick your Google account and approve.
+
+If Claude asks before every Composio action, you can stop that on the same page: **Composio →
+Tool permissions → Always allow**. On a Team or Enterprise plan, only an owner can add a custom
+connector.
 
 Connectors load when a session starts, so **start a new session after connecting one.** Claude
 checks what's connected at the start of each session and tells you if something a skill needs is
