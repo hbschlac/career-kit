@@ -17,9 +17,9 @@ whoever owns this copy.** Everything you know about them is in `profile/`. The s
 
 | Connector | Tools you'd see | Needed by |
 |-----------|-----------------|-----------|
-| Google Docs / Drive | `find_and_replace_doc`, `copy_file`, `download_file_content`, or Composio `GOOGLEDOCS_*` / `GOOGLEDRIVE_*` | `resume` Gates 4–5, `setup` step 1 |
+| Google Docs / Drive | `find_and_replace_doc`, `copy_file`, `download_file_content`, or Composio `GOOGLEDOCS_*` / `GOOGLEDRIVE_*` | `resume` Gates 4–5, `setup` step 1 (every resume in Drive, work samples) |
 | Google Sheets (via Composio) | `COMPOSIO_REMOTE_WORKBENCH`, `GOOGLESHEETS_*` | the tracker (`networking/references/pipeline.md`), `career-review` |
-| Gmail | `search_threads`, `get_thread` | `career-review`, `recruiter-filter` outcome scan (read-only, never send) |
+| Gmail | `search_threads`, `get_thread` | `career-review`, `recruiter-filter` outcome scan, `setup` step 4 voice samples, `networking` follow-ups (read-only, never send) |
 | LinkedIn jobs (bundled) | `mcp__linkedin-jobs__*` | `linkedin-jobs`. Loads from `.mcp.json` when this repo is the project |
 
 ## Trigger phrases → skill
@@ -27,8 +27,8 @@ whoever owns this copy.** Everything you know about them is in `profile/`. The s
 | When the user says… | Load |
 |---------------------|------|
 | "set me up", "get started", "fill in my profile", "update my profile" | `skills/setup/SKILL.md` |
-| "tailor / update my resume", a job link plus "resume", "cover letter" | `skills/resume/SKILL.md` |
-| "write a note / DM / cold email / intro request / referral ask", "networking" | `skills/networking/SKILL.md` |
+| "tailor / update my resume", a job link plus "resume", "cover letter", "use the resume I made for <company>" | `skills/resume/SKILL.md` |
+| "write a note / DM / cold email / intro request / referral ask", "follow up with", "reply to", "networking" | `skills/networking/SKILL.md` |
 | "job tracker", "pipeline", "log that I applied", "what's in my pipeline" | `skills/networking/references/pipeline.md` |
 | "score my resume against this job", "will this pass the ATS", "did I get rejected" | `skills/recruiter-filter/SKILL.md` |
 | "find roles", "who's hiring", "Boolean search", "companies that just raised" | `skills/job-search/SKILL.md` |
@@ -39,6 +39,18 @@ whoever owns this copy.** Everything you know about them is in `profile/`. The s
 | "what should I build for this application" | `skills/project/SKILL.md` |
 | "learn from this", "resume learn" | `skills/resume-learn/SKILL.md` |
 | "weekly review", "check my outcomes", "did anyone reply" | `skills/career-review/SKILL.md` |
+
+## End of every session that used a kit skill
+
+1. **Meter it.** Run `python3 scripts/session_meter.py` and show the user the summary: tokens, the
+   skills used, anything over a threshold. Then save the counts so `career-review` can track cost
+   per skill over time. With the tracker set up (`pipeline_sheet_id` in `profile/config.json`):
+   `python3 scripts/session_meter.py --json`, then with the Pipeline helpers loaded
+   `print(meter_row(<that dict>))`. Without it: `python3 scripts/session_meter.py --profile`, which
+   appends the row to `profile/meter.md`; commit it with the session's other profile changes.
+   Counts only, never transcript text.
+2. **Corrections?** If the user corrected the same kind of thing more than once, offer
+   `resume-learn` so it becomes a rule.
 
 ## Rules that hold everywhere
 

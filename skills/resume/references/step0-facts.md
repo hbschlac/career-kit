@@ -6,6 +6,27 @@ requirement, and the remaining gaps have gone to the user in ONE message.
 **Get the JD first.** If it is not in the conversation, ask for it; never tailor from a doc title.
 A job-posting URL goes through the `job-fetch` skill; a LinkedIn job URL through `linkedin-jobs`.
 
+## Start from the closest past version
+
+Tailoring the same kind of role from scratch twice wastes a session. Right after parsing the JD,
+check what the user already has:
+
+1. `grep -i -E "<company>|<role family>|<top theme>|<top theme>" profile/tailored.md`. That's the
+   registry: one line per tailored resume, newest last. If it has no rows yet, search
+   `cv_folder_id` in Drive for titles with the company or role instead.
+2. **Same company and role, or the same job reposted** → offer it as is: "You made a resume for
+   this exact job on <date>. Reuse it (I'll make a fresh copy), or tailor again?"
+3. **Close match** (same role family, and at least half of this JD's top themes appear in its
+   themes column) → offer it as the starting point: "Your <Company> <Role> version (<date>,
+   scored <n>) already covers <themes>. Start from it instead of your main resume?" The swap list
+   then covers only what this JD needs differently.
+4. **The user names one** ("use the one I made for Acme") → find it in the registry by company.
+5. Ask this in Gate 0's one batched message, never in a turn of its own. If they don't mind, use
+   the closest match, else `base_cv_doc_id`.
+
+A past version is final: never edit it. Gate 4 copies it like any base, and its claims still go
+through the ledger grep like any other fact.
+
 **Grep, don't read.** The ledger (`profile/evidence.md`) and the story bank (`profile/me.md`) grow
 long and are never read whole. Per JD requirement:
 

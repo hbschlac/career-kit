@@ -55,13 +55,12 @@ enabled mid-session usually need a fresh session to load.
 
 ## Base selection and the copy
 
-1. **Choose the base.** Default: `profile/config.json` → `base_cv_doc_id`. If `cv_folder_id` is
-   set and holds earlier tailored resumes, a recent one whose angle matches this JD (same role
-   family, same industry lean) can be a better base: its content and numbers are already close.
-   Search the folder with Drive `search_files`, newest first, read the 2–3 best candidates' titles
-   and pick. Still select final bullets fresh against the JD; a matched base is a starting point,
-   not permission to skip tailoring. **Confirm the chosen base with the user before copying.**
-   If neither `base_cv_doc_id` nor `cv_folder_id` is set, stop and offer the `setup` skill.
+1. **Use the base chosen at Gate 0**: the closest past version from `profile/tailored.md` (see
+   `step0-facts.md` → *Start from the closest past version*), else `profile/config.json` →
+   `base_cv_doc_id`. Still select final bullets fresh against the JD; a matched base is a starting
+   point, not permission to skip tailoring. **Confirm the chosen base with the user before
+   copying.** If neither `base_cv_doc_id` nor `cv_folder_id` is set, stop and offer the `setup`
+   skill.
 2. **Check for an existing tailored draft** for this company/role before starting from scratch. If
    one exists and was tailored in a prior session, diff-preview first: show the from/to swap list,
    wait for a go-ahead, then execute.

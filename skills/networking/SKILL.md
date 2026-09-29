@@ -4,9 +4,10 @@ description: >
   Outreach and networking skill, and the front door to the career kit. Use whenever the user wants
   to reach out to a professional contact: a hiring manager, a leader at a target company, a
   recruiter, a fellow alum, someone they found on LinkedIn, or a mutual who could introduce them.
-  Drafts cover letters, LinkedIn DMs and connection notes, cold emails, intro requests, and
-  third-person referral blurbs. Routes resume tailoring to the resume skill, finding roles and
-  people to the job-search skill, and tracker updates ("job tracker", "update my tracker",
+  Drafts cover letters, LinkedIn DMs and connection notes, cold emails, intro requests,
+  third-person referral blurbs, and follow-ups or replies ("follow up with", "reply to",
+  "bump"). Routes resume tailoring to the resume skill, finding roles and people to the job-search
+  skill, and tracker updates ("job tracker", "update my tracker",
   "what's in my pipeline", "log that I applied", "mark CV done for X") to references/pipeline.md.
 ---
 
@@ -78,6 +79,14 @@ Some or all of:
 
 Work with what you have. If something load-bearing is missing (the ask, or who the reader is), ask
 before drafting.
+
+**Follow-ups and replies: read the thread first (Gmail connected).** When the message continues a
+conversation (a bump, a thank-you after a call, a reply, a second referral nudge), search the
+user's mailbox for the person's name or email address, newest first, and read that one thread as
+plain text. Then match it: don't repeat the intro, answer what they asked, pick up what they said,
+and keep the tone the user already used with them. Read-only: never draft, send or label in
+Gmail. The message comes back to the chat for the user to send. No Gmail connector → ask the user
+to paste the last message.
 
 ---
 

@@ -31,11 +31,11 @@ batched: ask everything a step needs at once, never one question per turn.
    | Editing resume docs | `find_and_replace_doc` (Google Docs connector) **or** Composio `GOOGLEDOCS_REPLACE_ALL_TEXT` | Resumes can still be drafted in chat; the user pastes them into their doc |
    | Finding / copying docs, PDF export | Google Drive connector (`copy_file`, `download_file_content`) or Composio `GOOGLEDRIVE_*` | Same as above |
    | Job tracker | Composio Google Sheets (`GOOGLESHEETS_*`, `COMPOSIO_REMOTE_WORKBENCH`) | Tracker can live in `profile/pipeline.md` as a markdown table instead |
-   | Checking replies from recruiters | Gmail connector (read-only is enough) | `career-review` and the outcome scan are skipped |
+   | Checking replies from recruiters, learning voice from sent mail, follow-up context | Gmail connector (read-only is enough) | `career-review`, the outcome scan and the Gmail options in Step 4 and `networking` are skipped |
    | LinkedIn job search | `mcp__linkedin-jobs__*` (bundled in this repo, no login) | Only needs the repo attached as the session's project |
 
-   For anything missing, point them to **README.md → Connect your tools** and continue. Nothing in
-   setup except Step 5 needs a connector.
+   For anything missing, point them to **README.md → Connect your tools** and continue. Only Step 5
+   needs a connector; Steps 1 and 4 do more when Drive and Gmail are connected.
 
 ## Step 1 — The resume
 
@@ -48,6 +48,24 @@ Ask for their best current resume, in whichever form they have it:
 
 Write the full text into `profile/resume.md` under its headings, and fill `name`, `email`,
 `phone`, `linkedin`, `website` in `profile/config.json` from the contact line.
+
+**Every resume they've made, not only the latest (Google Drive connected).** Older versions often
+hold facts and numbers the current one dropped. In the same message, offer: "Want me to read every
+resume in your Google Drive, or only ones from a date range (say, 2021 to now)?" If yes:
+1. Search Drive for docs and PDFs with "resume", "CV" or their name in the title (or the folder
+   they name), limited to the range they gave, newest first.
+2. Read each as plain text (Drive `read_file_content`, never `download_file_content`), one at a
+   time, and turn it into ledger lines right away in Step 3's format, tagged
+   `(source: <file title>, <modified date>)`. Never paste a whole document into the chat. Past 20
+   files, read the 20 newest in full and list the rest by title only.
+3. A version tailored to one company or role (the title or tagline usually says so) also goes into
+   `profile/tailored.md`, one line each, so the resume skill can start from it later.
+4. Still confirm which one is the base. Default: the newest general-purpose version.
+
+**Work samples and projects (optional, Drive).** Ask for a folder or a few docs they're proud of:
+PRDs, decks, case studies, launch memos, portfolio pieces. Skim each for facts with numbers
+(scope, users, revenue, time saved) and add them to the ledger the same way. Docs they wrote
+themselves also count as writing samples in Step 4.
 
 ## Step 2 — The short interview (one batched message)
 
@@ -82,6 +100,12 @@ LinkedIn post, a few Slack messages. Paste them into `profile/voice.md` under *W
 then follow `skills/voice/references/building-a-voice-profile.md` to write the voice rules and
 the banned-words list. Show them the rules and ask: "Does this sound like you? Anything off?"
 Fix what they flag.
+
+**Gmail connected? Offer to find the samples for them.** Search their sent mail (`in:sent`) for
+emails they wrote to people outside their own company: networking notes, follow-ups, thank-yous,
+cover emails. Newest first. Show the subject lines of up to 10 and let them pick before reading any
+in full. Keep only their own words (drop quoted replies and signatures). Read-only: never draft,
+send, label or delete. Docs from Step 1's work samples that they wrote themselves count too.
 
 ## Step 5 — The tracker (needs Google Sheets; otherwise use markdown)
 

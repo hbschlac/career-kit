@@ -5,12 +5,14 @@
     python3 scripts/session_meter.py PATH.jsonl      # a specific transcript
     python3 scripts/session_meter.py --json          # machine-readable
     python3 scripts/session_meter.py --append        # one JSON line to ~/.claude/cv-guard/meter.log
+    python3 scripts/session_meter.py --profile       # one row to profile/meter.md (no tracker sheet)
 
 Reads the per-message `usage` that Claude Code writes to ~/.claude/projects/<cwd>/<session>.jsonl,
 dedupes by requestId (one API call is written once per content block), and counts the tool
-calls that drive a CV session's cost: doc edits, read-backs, PDF pulls, rubric runs. Run it at
-the end of a CV session and compare against the thresholds (the same ones the career-review
-skill flags); a session over several of them is the one to look at.
+calls that drive a CV session's cost: doc edits, read-backs, PDF pulls, rubric runs. It also
+lists which kit skills the session used, so career-review can compare cost per skill over time.
+Run it at the end of a session and compare against the thresholds (the same ones the
+career-review skill flags); a session over several of them is the one to look at.
 
 Stdlib only. Never prints the transcript, only the totals.
 """
@@ -88,6 +90,25 @@ def classify(name, inp):
     return cats
 
 
+SKILL_PATH = re.compile(r"skills/([a-z0-9][a-z0-9-]*)/")
+
+
+def kit_root():
+    return pathlib.Path(os.environ.get("CLAUDE_PROJECT_DIR") or pathlib.Path(__file__).resolve().parent.parent)
+
+
+def skills_touched(name, inp, known):
+    """Kit skills a tool_use loaded or ran: a Skill call, or any path under skills/<name>/."""
+    found = []
+    if not isinstance(inp, dict):
+        return found
+    if name == "Skill":
+        found.append(str(inp.get("skill", "")).split(":")[-1])
+    for key in ("file_path", "path", "pattern", "command"):
+        found.extend(SKILL_PATH.findall(str(inp.get(key) or "")))
+    return [s for s in found if s and (not known or s in known)]
+
+
 def meter(path):
     usage = {"input_tokens": 0, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0, "output_tokens": 0}
     seen = set()
@@ -98,6 +119,8 @@ def meter(path):
     peak_context = 0
     compactions = 0
     model = ""
+    skills = {}  # name -> uses, in first-use order
+    known = {p.name for p in (kit_root() / "skills").glob("*") if p.is_dir()}
     with path.open(encoding="utf-8") as fh:
         for line in fh:
             try:
@@ -123,6 +146,8 @@ def meter(path):
                     tools[b.get("name", "?")] += 1
                     for cat in classify(b.get("name"), b.get("input") or {}):
                         cats[cat] += 1
+                    for sk in skills_touched(b.get("name"), b.get("input") or {}, known):
+                        skills[sk] = skills.get(sk, 0) + 1
             rid = o.get("requestId") or m.get("id")
             if rid in seen:
                 continue
@@ -151,6 +176,7 @@ def meter(path):
         "output_tokens": usage["output_tokens"],
         "total_input_processed": total_in,
         "cv": {k: cats.get(k, 0) for k in CV_KEYS},
+        "skills": list(skills),
         "top_tools": tools.most_common(10),
     }
 
@@ -178,14 +204,39 @@ def render(r):
         lines.append(f"    {label:<16}{r['cv'][key]:>6}   {THRESHOLDS[key]:>10}{flag}")
     lines.append(f"    cvcheck runs {r['cv']['cvcheck_runs']} · sandbox PDF exports {r['cv']['sandbox_exports']}"
                  f" · sheet calls {r['cv']['sheet_calls']}")
+    if r.get("skills"):
+        lines.append("  skills used: " + ", ".join(r["skills"]))
     if r["top_tools"]:
         lines.append("  top tools: " + ", ".join(f"{n} ×{c}" for n, c in r["top_tools"][:6]))
     return "\n".join(lines)
 
 
+PROFILE_HEAD = ("| Date | Session | Skills | API calls | Your messages | Peak context (k) | Input (k) "
+                "| Output (k) | Compactions | Doc edits | Read-backs | PDF pulls | Rubric runs |\n"
+                "|---|---|---|---|---|---|---|---|---|---|---|---|---|\n")
+
+
+def append_profile(r):
+    """One row to profile/meter.md: the Meter tab's counts, for copies without a tracker sheet."""
+    out = kit_root() / "profile" / "meter.md"
+    if not out.exists():
+        out.write_text("# Session meter\n\nOne row per session, counts only. `career-review` reads it "
+                       "when there is no Meter tab.\n\n" + PROFILE_HEAD, encoding="utf-8")
+    cv = r["cv"]
+    cells = [time.strftime("%Y-%m-%d"), os.path.basename(r["transcript"])[:8],
+             ", ".join(r.get("skills") or []) or "-", r["api_calls"], r["user_messages"],
+             r["peak_context_tokens"] // 1000, r["total_input_processed"] // 1000,
+             r["output_tokens"] // 1000, r["compactions"], cv["doc_edits"], cv["readbacks"],
+             cv["pdf_pulls"], cv["rubric_runs"]]
+    with out.open("a", encoding="utf-8") as fh:
+        fh.write("| " + " | ".join(map(str, cells)) + " |\n")
+    return out
+
+
 def main(argv):
     as_json = "--json" in argv
     append = "--append" in argv
+    profile = "--profile" in argv
     explicit = next((a for a in argv if a.endswith(".jsonl")), None)
     path = find_transcript(explicit)
     if not path or not path.exists():
@@ -193,6 +244,9 @@ def main(argv):
             print("session_meter: no transcript found", file=sys.stderr)
         return 0 if append else 1
     r = meter(path)
+    if profile:
+        print(f"session_meter: row added to {append_profile(r)}")
+        return 0
     if append:
         try:
             out = pathlib.Path(os.path.expanduser("~/.claude/cv-guard")); out.mkdir(parents=True, exist_ok=True)
