@@ -14,5 +14,9 @@ jobs:
         run: python3 tests/test_cv_guard.py
       - name: Session meter tests
         run: python3 tests/test_session_meter.py
+      - name: Page-fit workbench cell tests
+        run: python3 tests/test_cvcheck_workbench.py
+      - name: LinkedIn jobs tests (offline)
+        run: python3 tests/test_linkedin_jobs.py
       - name: Scripts compile
         run: python3 -m py_compile .claude/hooks/*.py scripts/*.py mcp/linkedin-jobs/server.py skills/*/scripts/*.py

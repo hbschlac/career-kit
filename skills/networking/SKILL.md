@@ -5,8 +5,8 @@ description: >
   to reach out to a professional contact: a hiring manager, a leader at a target company, a
   recruiter, a fellow alum, someone they found on LinkedIn, or a mutual who could introduce them.
   Drafts cover letters, LinkedIn DMs and connection notes, cold emails, intro requests,
-  third-person referral blurbs, and follow-ups or replies ("follow up with", "reply to",
-  "bump"). Routes resume tailoring to the resume skill, finding roles and people to the job-search
+  third-person referral blurbs, follow-ups or replies ("follow up with", "reply to", "bump"), and
+  a three-sentence "why me" for a person or role ("why me", "elevator pitch", "pitch me for"). Routes resume tailoring to the resume skill, finding roles and people to the job-search
   skill, and tracker updates ("job tracker", "update my tracker",
   "what's in my pipeline", "log that I applied", "mark CV done for X") to references/pipeline.md.
 ---
@@ -95,8 +95,10 @@ to paste the last message.
 ### Step 1: Pick the frame
 
 **Which part of the user's story matters to this reader?** Look at the reader's company and the
-opportunity. Pick the one angle from `profile/me.md` (story bank) that answers "why this person
-for what you are building". Different audiences get different angles; do not summarize the resume.
+opportunity. Grep `profile/positioning.md` for the role family it belongs to: its lead story,
+proof points and "why me" line are the starting angle. Otherwise pick the one angle from
+`profile/me.md` (story bank) that answers "why this person for what you are building". Different
+audiences get different angles; do not summarize the resume.
 
 **Ladder to the opportunity, not to the recipient's own job.** When the user is reaching out about
 open roles at a company in general, the recipient's background explains *why them* (alum, works
@@ -158,6 +160,21 @@ Run the final gate in `references/signal-in-the-noise.md` and fix what fails. Th
 Ask whether it sounds like them. Be ready to change the hook, tighten length, or shift the angle.
 For anything longer than a DM, run `skills/voice/SKILL.md` and `skills/aislop/SKILL.md` before
 showing it.
+
+### Why me, in three sentences
+
+When the user asks for their pitch to a person or role ("why me", "elevator pitch", "pitch me for
+the <role> at <company>"), or a message needs one, write exactly three sentences:
+
+1. **Match.** Their #1 need, in their own words (from the JD, the person's role, or something they
+   wrote), and the thing the user has already done that answers it.
+2. **Proof.** One number that shows it, from `profile/evidence.md` (grep; never invent or round up).
+3. **Bridge.** Why this company or person specifically: something true and concrete, not praise.
+
+Start from the role family's "why me" line in `profile/positioning.md`. Under 60 words. Give two
+versions: one in first person for a hiring manager, and one in third person the contact can
+forward in a referral. Run the voice and AI-slop checks. Then add a line to that family's **Log**
+in `profile/positioning.md` (date, person or role, the story it led with, outcome `pending`).
 
 ---
 

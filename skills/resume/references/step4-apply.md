@@ -1,8 +1,9 @@
 # Gate 4 — Apply the swap list as one round
 
 **The round:** select and copy the base → read the copy's plaintext → apply every swap in one
-batch → read back once → `bash skills/resume/scripts/cvcheck.sh <DOC_ID>` (exports the PDF to a
-file and returns only the line-fit summary) → fix any over-long bullet → update the tracker. Run
+batch → read back once → page fit: `CVFIT_<id>("<DOC_ID>")` in Composio's workbench (*After the
+round*, step 1), or `cvcheck.sh` without Composio. Both return only the line-fit summary, never the
+PDF → fix any over-long bullet → update the tracker. Run
 this per **set**, never per bullet; running it per bullet is how a handful of bullets turn into
 dozens of doc edits and PDF pulls.
 
@@ -66,9 +67,7 @@ enabled mid-session usually need a fresh session to load.
    wait for a go-ahead, then execute.
 3. **Copy it** with Drive `copy_file` (or `GOOGLEDOCS_COPY_DOCUMENT`) into `cv_folder_id`, named
    `<Company>-<Role>_Resume-<config.name>`. All edits happen on the copy; never edit the base.
-4. **Share for export.** `cvcheck.sh` reads the copy through an unauthenticated export, so ask the
-   user to set the copy to *Anyone with the link: Viewer* (or skip `cvcheck.sh` and use the Drive
-   export in `step5-publish.md` for the line check).
+   The copy stays private: nothing in this gate needs it shared.
 
 ## Apply
 
@@ -135,12 +134,22 @@ Including it in `fields` causes a 400.
 
 ## After the round
 
-1. `bash skills/resume/scripts/cvcheck.sh <COPY_DOC_ID>`: one page, no bullet over 2 lines. Exit
-   1 → tighten the flagged bullets (wording only) and run one more round. Exit 3 → the copy isn't
-   link-readable; ask the user to share it, or export via Drive: `touch
-   ~/.claude/cv-guard/allow-download`, `download_file_content` to a **file** (never into the chat),
-   `rm ~/.claude/cv-guard/allow-download` (details in `step5-publish.md`), then run
-   `python3 skills/resume/scripts/linefit.py <file.pdf> --over 2`.
+1. **Page fit: one page, no bullet over 2 lines.** Never pull the PDF into the chat. The copy is
+   private, so run the check inside Composio's workbench, which reads the user's Drive as the user
+   and needs no link sharing.
+   - Send `skills/resume/scripts/cvcheck_workbench.py`, unchanged (nothing to fill in), as the
+     `code_to_execute` of ONE `COMPOSIO_REMOTE_WORKBENCH` call, once per session. It prints
+     `cvfit loaded as CVFIT_<id>`: the one name it binds, hashed from its code, so other sessions
+     sharing the sandbox can't replace it. Never call a bare `cvfit()`.
+   - Next call: `CVFIT_<id>("<COPY_DOC_ID>")` (a doc URL works; `over=3` allows 3-line bullets).
+     It exports the doc in the sandbox, runs `linefit.py`, deletes the PDF and prints only the
+     summary. Exit 0 fits, 1 over one page or a bullet too long, 2 bad doc id, 3 export failed,
+     4 linefit failed. A `NameError` means the sandbox restarted: send the file again.
+   - Exit 1 → tighten the flagged bullets (wording only) and run one more round, then re-check
+     with the same one-liner.
+   - No Composio connector: `bash skills/resume/scripts/cvcheck.sh <COPY_DOC_ID>` works only on a
+     doc already shared by link (exit 3 otherwise). Never change the doc's sharing to make it
+     work; tell the user the page fit is unchecked.
 2. **Update the tracker** with the Pipeline workbench helpers
    (`skills/networking/references/pipeline.md`; sheet from `profile/config.json` →
    `pipeline_sheet_id`): `find()` the row, `log(N, "<M/D> - resume built from the <base> base",

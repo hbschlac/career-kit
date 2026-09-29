@@ -65,8 +65,11 @@ team works? If yes, say that.
 
 ## Content steps
 
-1. **Classify the JD**: its 2–3 themes and its #1 requirement.
-2. **Draft the tagline** (see *Tagline* below).
+1. **Classify the JD**: its 2–3 themes, its #1 requirement, and which role family in
+   `profile/positioning.md` it belongs to. Grep that section and use its lead story, proof points
+   and words. If no family fits, say so and draft from the story bank; after the session, offer to
+   add the new family to the file.
+2. **Draft the tagline** (see *Tagline* below), starting from that family's "why me" line.
 3. **Start with the most recent / most relevant role**; this is where most tailoring happens.
    Reorder to front-load the most relevant bullets; rewrite verbs or "why it mattered" clauses to
    connect to the themes.

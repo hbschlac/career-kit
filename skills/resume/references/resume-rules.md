@@ -33,7 +33,7 @@ lives in `profile/resume.md`; this file never holds content.
    change.
 
 6. **Every bullet fits within 2 lines** in the rendered doc. Tighten the language, keeping the
-   action + outcome + why structure. Measure it with `skills/resume/scripts/cvcheck.sh`; don't estimate from
+   action + outcome + why structure. Measure it with the page-fit check (`CVFIT_<id>` from `skills/resume/scripts/cvcheck_workbench.py` in Composio's workbench, or `cvcheck.sh` for a link-shared doc); don't estimate from
    character count and don't ask the user to eyeball it.
 
 7. **The italic role/company descriptor fits on exactly 1 line.** Shorten it; don't let it wrap.

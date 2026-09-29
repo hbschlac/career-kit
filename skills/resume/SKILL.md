@@ -7,8 +7,11 @@ description: >
   gated workflow: facts from the user's evidence ledger first, then a full swap list written in
   chat, a voice pass, a before/after ATS score, one round of targeted Google Docs edits on a copy
   of the base resume (or of the closest resume already tailored for a similar job), and a PDF
-  export. Triggers: "tailor my resume", "resume for this job", "update my CV", "resume skill",
-  "export my resume", "use the resume I made for <company>", "reuse my <company> resume".
+  export. Also edits a resume from feedback (pasted, or comments on the doc), and has a quick mode
+  for a job link sent from a phone that ends with a PDF in Drive. Triggers: "tailor my resume",
+  "resume for this job", "update my CV", "resume skill", "export my resume", "use the resume I made
+  for <company>", "reuse my <company> resume", "edit my resume with this feedback", "apply the
+  comments on my resume", a job link plus "make me a resume" or "CV for this".
 ---
 
 # Resume — five gates, one file per gate
@@ -18,8 +21,12 @@ instruction before reading the job description burns context and still produces 
 bullet by bullet. What a gate needs is in that gate's file. What must never be forgotten is on the
 wall below. Paths are repo-relative.
 
+**Two other ways in.** Feedback on an existing resume, with no new job description: follow
+`references/feedback-edits.md`. A job link sent from a phone ("make me a resume for this"): follow
+`references/quick-mode.md`, which runs the same gates with fewer stops and puts a PDF in Drive.
+
 **Profile preflight.** This skill reads personal data only from `profile/`: `me.md`, `resume.md`,
-`evidence.md`, `voice.md`, `rules.md`, `targets.md` and `config.json` (`name`, `email`, `phone`,
+`evidence.md`, `voice.md`, `rules.md`, `targets.md`, `positioning.md` and `config.json` (`name`, `email`, `phone`,
 `linkedin`, `website`, `cv_folder_id`, `base_cv_doc_id`, `pipeline_sheet_id`). If a file it needs
 is empty or still holds template placeholders (`<…>` / `TODO`), say which one and offer to run the
 `setup` skill. Never invent the missing facts.
@@ -34,8 +41,11 @@ is empty or still holds template placeholders (`<…>` / `TODO`), say which one 
    *latest* plaintext readback. 0 or 2+ matches → stop and re-read. Never insert or rewrite a
    paragraph to compensate; that is how the user's own edits get reverted.
 4. **Read the doc before every write round.** The doc is the truth; the conversation is not.
-5. **Never export a PDF into the conversation.** `bash skills/resume/scripts/cvcheck.sh <DOC_ID>`
-   writes it to a file and returns only the line-fit summary.
+5. **Never export a PDF into the conversation.** Check page fit with `CVFIT_<id>("<DOC_ID>")`:
+   send `skills/resume/scripts/cvcheck_workbench.py` as one `COMPOSIO_REMOTE_WORKBENCH` call, and
+   it measures the doc in Composio's sandbox and returns only the summary
+   (`references/step4-apply.md` → *After the round*). `cvcheck.sh` does the same locally, but only
+   for a doc already shared by link. Never change a doc's sharing to make a check work.
 6. **Score twice**: baseline and final. Never re-score after a rewording.
 7. **Every fact traces** to `profile/evidence.md`, `profile/me.md`, `profile/resume.md`, or the
    user's words this session. Grep before asking; ask once, batched; append their answers to the
@@ -65,8 +75,9 @@ real gaps and the starting version; append the answers. **No drafting until this
 
 ## Gate 1 — Write → `references/step1-write.md` + `references/resume-rules.md`
 Draft **all** bullets, the tagline and the skills line in the conversation as a from→to swap list.
-No doc calls yet. The tagline passes rule 8, ticked in the swap list, and each role's first bullet
-proves it.
+No doc calls yet. Start from the JD's role family in `profile/positioning.md` (grep it): its lead
+story, proof points and "why me" line shape the tagline and bullet order. The tagline passes rule
+8, ticked in the swap list, and each role's first bullet proves it.
 
 ## Gate 2 — Voice → `references/step2-voice.md`
 One pass over the whole set. Wording only; facts are frozen.
@@ -76,7 +87,7 @@ One pass over the whole set. Wording only; facts are frozen.
 
 ## Gate 4 — Apply → `references/step4-apply.md`
 Select and copy the base, read its plaintext, apply the swap list as **one round**, read back
-once, `cvcheck.sh`, then the tracker.
+once, the page-fit check (`CVFIT_<id>`; `cvcheck.sh` only for a link-shared doc), then the tracker.
 
 ## Gate 5 — Export (only when the user asks) → `references/step5-publish.md`
 Cover letters: `references/cover-letter.md`.
@@ -103,7 +114,9 @@ how one bullet ends up with many versions.
 1. **Log the version.** Add one line to `profile/tailored.md`: date, company, role, role family,
    the JD's top 3 themes, doc link, final score, status (draft / final / sent). Put the doc link in
    the tracker's column I (*CV for this app*) and the doc it was copied from in column H. This line
-   is what lets the next similar job start from this one.
+   is what lets the next similar job start from this one. Also add a line to that role family's
+   **Log** in `profile/positioning.md`: date, company and role, the story you led with, outcome
+   `pending`.
 2. **Meter it.** Follow *End of every session* in `CLAUDE.md` (kind `cv`). `career-review` reads
    those rows to find what costs the most and propose fixes.
 3. **Capture corrections.** If the user gave meaningful corrections this session (verbs, phrasing, workflow, slop flags,

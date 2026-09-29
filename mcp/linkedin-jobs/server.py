@@ -8,6 +8,8 @@ Two ways to run the same code:
 
   python3 server.py                      # MCP server over stdio (Claude Code / Desktop)
   python3 server.py search --keywords "data analyst" --location "Chicago, IL"
+  python3 server.py search --keywords "product manager" --years 6 --max-years-asked 8 \
+      --industries software,financial --min-salary 150000 --workplace remote
   python3 server.py get 1234567890       # or a full linkedin.com/jobs/view/... URL
   python3 server.py track 1234567890 --notes "via referral"   # prints the Pipeline row
 
@@ -50,6 +52,17 @@ EXPERIENCE = {"internship": "1", "entry": "2", "associate": "3",
 JOB_TYPE = {"full-time": "F", "part-time": "P", "contract": "C",
             "temporary": "T", "internship": "I"}
 WORKPLACE = {"onsite": "1", "remote": "2", "hybrid": "3"}
+
+# Checked live on 2026-09-29: the public search honors keywords, location and posted-within, but
+# returns the same jobs with or without f_E (experience), f_WT (workplace), f_I (industry),
+# f_F (function) or f_SB2 (salary). So those filters are applied here instead, by reading each
+# posting's own details (screen_jobs). The f_E / f_JT / f_WT / f_C params are still sent: they
+# cost nothing and start working again if LinkedIn honors them.
+SENIORITY = {"internship": "internship", "entry": "entry level", "associate": "associate",
+             "mid-senior": "mid-senior level", "director": "director", "executive": "executive"}
+SCREEN_PAUSE_S = 2.5   # between posting fetches while screening
+SCREEN_CHECKS = 15     # default postings read per call when screening
+MAX_SCREEN_CHECKS = 40
 
 
 class LinkedInError(Exception):
@@ -185,6 +198,148 @@ def parse_job(page, jid):
     }
 
 
+# ---------------------------------------------------------------------- screening
+
+_YEARS = re.compile(r"(\d{1,2})\s*(?:\+|plus)?\s*(?:(?:-|–|to)\s*\d{1,2}\s*\+?\s*)?(?:years|yrs)\b", re.I)
+
+
+def years_asked(text):
+    """The fewest years of experience a posting asks for ("5+ years of experience" -> 5), or None.
+    Only counts a number followed within a short window by "experience", so "founded 10 years
+    ago" doesn't count. The smallest wins: the higher numbers are usually "preferred"."""
+    text = text or ""
+    found = []
+    for m in _YEARS.finditer(text):
+        if re.search(r"experience|\bexp\b", text[m.end():m.end() + 80], re.I):
+            found.append(int(m.group(1)))
+    return min(found) if found else None
+
+
+_MONEY = re.compile(r"\$\s?(\d[\d,]*(?:\.\d+)?)\s*([kK])?(\s*(?:/|per)\s*(?:hr|hour))?")
+
+
+def salary_top(text):
+    """The top of a posted pay range, per year ("$60/hr" counts as 2,080 hours), or None."""
+    tops = []
+    for m in _MONEY.finditer(text or ""):
+        amount = float(m.group(1).replace(",", ""))
+        if m.group(2):
+            amount *= 1000
+        if m.group(3):
+            amount *= 2080
+        if amount >= 1000:  # skip "$5 gift card"-style noise
+            tops.append(int(amount))
+    return max(tops) if tops else None
+
+
+def levels_for_years(years):
+    """LinkedIn seniority labels that usually fit someone with this many years."""
+    y = int(years)
+    if y <= 1:
+        return ["internship", "entry"]
+    if y <= 4:
+        return ["entry", "associate", "mid-senior"]
+    if y <= 9:
+        return ["mid-senior"]
+    if y <= 14:
+        return ["mid-senior", "director"]
+    return ["director", "executive"]
+
+
+def workplace_of(job):
+    """Best guess at remote / hybrid / onsite from the location, title and description."""
+    head = " ".join([job.get("location") or "", job.get("title") or "",
+                     (job.get("description") or "")[:1500]]).lower()
+    return [k for k, pat in (("remote", r"\bremote\b"), ("hybrid", r"\bhybrid\b"),
+                             ("onsite", r"\bon-?site\b|\bin[- ]office\b|\bin person\b"))
+            if re.search(pat, head)]
+
+
+def _lower_list(value):
+    if value in (None, "", []):
+        return []
+    vals = value if isinstance(value, list) else str(value).split(",")
+    return [str(v).strip().lower() for v in vals if str(v).strip()]
+
+
+def check_job(d, want):
+    """Keep or drop one posting against the screening criteria. Returns (keep, reasons, unknown)."""
+    drop, unknown = [], []
+    if want.get("levels"):
+        sen = (d.get("seniority") or "").lower()
+        if not sen or sen == "not applicable":
+            unknown.append("seniority")
+        elif not any(SENIORITY[l] == sen for l in want["levels"]):
+            drop.append("seniority is %s" % d.get("seniority"))
+    if want.get("max_years_asked") is not None:
+        asked = d.get("years_asked")
+        if asked is None:
+            unknown.append("years")
+        elif asked > want["max_years_asked"]:
+            drop.append("asks for %d+ years" % asked)
+    for key, field in (("industries", "industries"), ("functions", "job_function")):
+        if want.get(key):
+            have = (d.get(field) or "").lower()
+            if not have:
+                unknown.append(field)
+            elif not any(w in have for w in want[key]):
+                drop.append("%s is %s" % (field.replace("_", " "), d.get(field)))
+    if want.get("job_types"):
+        et = (d.get("employment_type") or "").lower().replace("-", "")
+        if et and not any(t.replace("-", "") in et for t in want["job_types"]):
+            drop.append("type is %s" % d.get("employment_type"))
+    if want.get("min_salary"):
+        top = d.get("salary_top")
+        if top is None:
+            unknown.append("salary")
+        elif top < want["min_salary"]:
+            drop.append("pay tops out at $%s" % format(top, ","))
+    if want.get("workplace"):
+        kinds = d.get("workplace_guess") or []
+        if not kinds:
+            unknown.append("workplace")
+        elif not set(kinds) & set(want["workplace"]):
+            drop.append("workplace looks %s" % "/".join(kinds))
+    return (not drop), drop, unknown
+
+
+def screen_jobs(jobs, want, fetch=None, pause=SCREEN_PAUSE_S, max_checks=SCREEN_CHECKS, keep=None):
+    """Read each posting and apply the filters LinkedIn's public search ignores. Stops at
+    max_checks postings, at `keep` kept jobs, or at the first rate limit, and says which."""
+    fetch = fetch or get_job
+    kept, dropped, stopped = [], [], ""
+    for i, j in enumerate(jobs):
+        if keep is not None and len(kept) >= keep:
+            break
+        if i >= max_checks:
+            break
+        if i and pause:
+            time.sleep(pause)
+        try:
+            d = fetch(j["id"])
+        except LinkedInError as e:
+            stopped = "stopped early: %s" % e
+            break
+        d["years_asked"] = years_asked(d.get("description", ""))
+        d["salary_top"] = salary_top(d.get("salary") or j.get("salary") or d.get("description", ""))
+        d["workplace_guess"] = workplace_of(d)
+        ok, reasons, unknown = check_job(d, want)
+        row = dict(j, seniority=d.get("seniority", ""), industries=d.get("industries", ""),
+                   job_function=d.get("job_function", ""), employment_type=d.get("employment_type", ""),
+                   years_asked=d["years_asked"], salary_top=d["salary_top"],
+                   workplace_guess=d["workplace_guess"])
+        if unknown:
+            row["unknown"] = unknown
+        if ok and not d.get("closed"):
+            kept.append(row)
+        else:
+            dropped.append({"id": j["id"], "title": j.get("title"), "company": j.get("company"),
+                            "why": reasons or ["closed on LinkedIn"]})
+    if not stopped and len(kept) + len(dropped) >= max_checks and (keep is None or len(kept) < keep):
+        stopped = "read %d postings (check_limit); page on with next_start" % max_checks
+    return kept, dropped, stopped
+
+
 # ------------------------------------------------------------------------- tools
 
 def _pick(mapping, value, name):
@@ -203,8 +358,20 @@ def _pick(mapping, value, name):
 
 def search_jobs(keywords="", location="", posted_within="week", experience=None,
                 job_type=None, workplace=None, company_ids=None, sort="recent",
-                limit=25, start=0):
+                limit=25, start=0, years=None, max_years_asked=None, industries=None,
+                functions=None, min_salary=None, check_limit=None):
     limit = max(1, min(int(limit or 25), MAX_RESULTS))
+    levels = _lower_list(experience) or (levels_for_years(years) if years not in (None, "") else [])
+    for l in levels:
+        if l not in SENIORITY:
+            raise LinkedInError("Unknown experience %r. Use one of: %s" % (l, ", ".join(SENIORITY)))
+    want = {"levels": levels,
+            "max_years_asked": int(max_years_asked) if max_years_asked not in (None, "") else None,
+            "industries": _lower_list(industries), "functions": _lower_list(functions),
+            "job_types": _lower_list(job_type),
+            "min_salary": int(min_salary) if min_salary not in (None, "") else None,
+            "workplace": _lower_list(workplace)}
+    screening = any(v not in (None, []) for v in want.values())
     params = {
         "keywords": keywords,
         "location": location,
@@ -215,20 +382,43 @@ def search_jobs(keywords="", location="", posted_within="week", experience=None,
         "f_C": ",".join(str(c) for c in company_ids) if isinstance(company_ids, list) else company_ids,
         "sortBy": {"recent": "DD", "relevant": "R"}.get(sort or "recent", "DD"),
     }
-    jobs, seen, offset = [], set(), int(start or 0)
-    while len(jobs) < limit:
+    checks = max(1, min(int(check_limit or SCREEN_CHECKS), MAX_SCREEN_CHECKS))
+    # Screening can't use more cards than it will read, so it fetches only that many.
+    want_cards = checks if screening else limit
+    jobs, seen, offset, pos = [], set(), int(start or 0), {}
+    while len(jobs) < want_cards:
         params["start"] = offset
         page_jobs = parse_search(_get(SEARCH_URL, params))
         fresh = [j for j in page_jobs if j["id"] not in seen]
         if not fresh:
             break
+        for i, j in enumerate(page_jobs):
+            pos.setdefault(j["id"], offset + i)
         for j in fresh:
             seen.add(j["id"])
         jobs.extend(fresh)
         offset += len(page_jobs)
-        if len(jobs) < limit:
+        if len(jobs) < want_cards:
             time.sleep(PAGE_PAUSE_S)
-    return {"count": len(jobs[:limit]), "next_start": offset, "jobs": jobs[:limit]}
+
+    def next_start(used):
+        # Where the next call should start: the first card this call fetched but didn't use,
+        # so paging on never skips a posting nobody looked at.
+        return pos[jobs[used]["id"]] if used < len(jobs) else offset
+
+    if not screening:
+        return {"count": len(jobs[:limit]), "next_start": next_start(limit), "jobs": jobs[:limit]}
+    kept, dropped, stopped = screen_jobs(jobs, want, max_checks=checks, keep=limit)
+    out = {"count": len(kept), "next_start": next_start(len(kept) + len(dropped)), "jobs": kept,
+           "screened": {"read": len(kept) + len(dropped), "kept": len(kept), "dropped": dropped,
+                        "note": "LinkedIn's public search ignores experience, workplace, industry, "
+                                "function and salary filters, so each posting was read and checked. "
+                                "Jobs with an 'unknown' field didn't say, and were kept."}}
+    if levels and not experience:
+        out["screened"]["levels_from_years"] = levels
+    if stopped:
+        out["screened"]["stopped"] = stopped
+    return out
 
 
 def get_job(job):
@@ -281,7 +471,9 @@ TOOLS = [
         "name": "linkedin_search_jobs",
         "description": ("Search LinkedIn job postings via LinkedIn's public guest endpoint (no login, "
                         "no account). Returns id, title, company, location, post date and URL per job. "
-                        "Paginates politely; max 100 results per call."),
+                        "Filters by seniority, the user's years of experience, years the posting asks "
+                        "for, industry, function, pay and remote/hybrid by reading each posting, since "
+                        "the public search ignores those. Paginates politely; max 100 results per call."),
         "inputSchema": {"type": "object", "properties": {
             "keywords": dict(_S, description="Search keywords, e.g. 'data analyst'"),
             "location": dict(_S, description="e.g. 'Chicago, IL', 'United States', 'New York, NY'"),
@@ -295,6 +487,19 @@ TOOLS = [
             "sort": {"type": "string", "enum": ["recent", "relevant"], "default": "recent"},
             "limit": {"type": "integer", "default": 25, "minimum": 1, "maximum": MAX_RESULTS},
             "start": {"type": "integer", "default": 0, "description": "Offset; pass next_start to page"},
+            "years": {"type": "integer", "description": "The user's years of relevant experience; "
+                      "picks matching seniority levels when 'experience' isn't given"},
+            "max_years_asked": {"type": "integer", "description": "Drop postings that ask for more "
+                                "years than this (read from the description)"},
+            "industries": {"type": "array", "items": {"type": "string"}, "description": "Keep postings "
+                           "whose LinkedIn industry contains any of these words, e.g. 'software', 'financial'"},
+            "functions": {"type": "array", "items": {"type": "string"}, "description": "Keep postings "
+                          "whose job function contains any of these, e.g. 'product management', 'engineering'"},
+            "min_salary": {"type": "integer", "description": "Drop postings whose posted pay tops out "
+                           "below this per year. Postings with no pay listed are kept and marked"},
+            "check_limit": {"type": "integer", "default": SCREEN_CHECKS, "maximum": MAX_SCREEN_CHECKS,
+                            "description": "Most postings to read when any filter above, or "
+                            "experience/workplace/job_type, is set (about 3 s each)"},
         }},
     },
     {
@@ -326,7 +531,8 @@ def call_tool(name, args):
     if name == "linkedin_search_jobs":
         return search_jobs(**{k: v for k, v in args.items() if k in (
             "keywords", "location", "posted_within", "experience", "job_type", "workplace",
-            "company_ids", "sort", "limit", "start")})
+            "company_ids", "sort", "limit", "start", "years", "max_years_asked", "industries",
+            "functions", "min_salary", "check_limit")})
     if name == "linkedin_get_job":
         j = get_job(args["job"])
         return jd_markdown(j) if args.get("format") == "markdown" else j
@@ -398,6 +604,12 @@ def main(argv):
     s.add_argument("--sort", default="recent", choices=["recent", "relevant"])
     s.add_argument("--limit", type=int, default=25)
     s.add_argument("--start", type=int, default=0)
+    s.add_argument("--years", type=int, help="your years of experience (picks seniority levels)")
+    s.add_argument("--max-years-asked", type=int, help="drop postings asking for more years")
+    s.add_argument("--industries", help="comma list of words to match in the posting's industry")
+    s.add_argument("--functions", help="comma list of words to match in the posting's job function")
+    s.add_argument("--min-salary", type=int, help="drop postings whose pay tops out below this")
+    s.add_argument("--check-limit", type=int, help="most postings to read when screening")
     g = sub.add_parser("get")
     g.add_argument("job")
     g.add_argument("--markdown", action="store_true")
@@ -408,7 +620,9 @@ def main(argv):
     try:
         if a.cmd == "search":
             out = search_jobs(a.keywords, a.location, a.posted_within, a.experience, a.job_type,
-                              a.workplace, a.company_ids, a.sort, a.limit, a.start)
+                              a.workplace, a.company_ids, a.sort, a.limit, a.start, a.years,
+                              a.max_years_asked, a.industries, a.functions, a.min_salary,
+                              a.check_limit)
         elif a.cmd == "get":
             j = get_job(a.job)
             out = jd_markdown(j) if a.markdown else j

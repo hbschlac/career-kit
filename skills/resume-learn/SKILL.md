@@ -28,6 +28,7 @@ their preferences into a shared file. So:
 | A story or background detail for the story bank | `profile/me.md` |
 | A change to their master resume content (a canonical bullet, a tagline option, the contact line) | `profile/resume.md` |
 | A target-role or company preference | `profile/targets.md` |
+| A positioning call: which story to lead with for a kind of role, what to downplay, a better "why me" line | `profile/positioning.md` (that role family's section) |
 | A **generic** rule that would help any user (a workflow gate, a Google Docs API pitfall, a slop pattern, a scoring rule) | Propose it as a PR against `skills/` (see step 6) |
 
 **One source of truth per rule.** Never create a new file, never start a "recent learnings" log.

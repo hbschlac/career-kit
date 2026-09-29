@@ -7,9 +7,13 @@ search **in your own voice, from your own facts**:
 |----------|-------|--------------|
 | "Set me up" | `setup` | A 15-minute onboarding that builds your profile from your resume |
 | "Tailor my resume for <job link>" | `resume` | A copy of your resume doc, edited for that job, still one page, formatting intact |
+| A job link + "make me a resume", from your phone | `resume` (quick mode) | The tailored resume as a PDF in your Drive, ready to attach or forward, with one question at most |
+| "Edit my resume with this feedback" | `resume` | Each comment sorted into fact, wording or format, applied as one round, pushback where it breaks your rules |
 | "Write a note to <person> at <company>" | `networking` | Cover letters, LinkedIn DMs, cold emails, referral asks |
+| "Why me for <role or person>?" | `networking` | Three sentences on why you fit, plus a version a contact can forward |
+| "Prep me for my interview at <company>" | `interview` | A company brief, your stories mapped to likely questions, mock rounds with feedback, thank-you notes |
 | "Score my resume against this job" | `recruiter-filter` | A 0–100 fit score the way an ATS + recruiter skim sees it, with ranked fixes |
-| "Find roles like X" / a LinkedIn jobs link | `job-search`, `linkedin-jobs`, `job-fetch` | Open roles, full job descriptions, rows in your tracker |
+| "Find roles like X" / a LinkedIn jobs link | `job-search`, `linkedin-jobs`, `job-fetch` | Open roles filtered by your years of experience, industry, pay and remote; full job descriptions; rows in your tracker |
 | "Does this sound like me?" | `voice`, `aislop` | Drafts rewritten in your voice, AI-sounding lines flagged |
 | "Help me build a project for this application" | `project` | A scoped work sample that shows the team what you'd do |
 | "Learn from this session" | `resume-learn` | Your corrections saved as rules so you never repeat them |
@@ -91,6 +95,7 @@ profile/          ← YOU. The only folder with personal data. Private to your c
   rules.md          your personal rules (grows as you correct Claude)
   targets.md        roles, industries, locations, comp, dealbreakers
   contacts.md       warm contacts for referrals (optional)
+  positioning.md    which of your stories leads for which kind of role, and how it went
   tailored.md       every resume tailored to a job, so a similar job can start from it
   meter.md          token use per session, when there's no tracker sheet (created on first use)
   config.json       your tracker sheet ID, resume doc ID, contact details
@@ -114,10 +119,12 @@ scratch. And every session records its token use and which skills it ran. The we
 `career-review` finds the skill that costs the most, proposes a fix as a pull request you approve,
 and checks the next week whether the cost came down.
 
-**Privacy note on the line-fit check.** `cvcheck.sh` reads a resume copy through Google's
-link-sharing export, so it asks you to set that copy to *Anyone with the link: Viewer*. While it is
-shared, anyone with the link can see its contact line (phone, email). Turn link sharing off once the
-check has passed, or use the Drive-export path in `skills/resume/references/step5-publish.md`.
+**Your resume copies stay private.** The page-fit check (one page, no bullet over two lines) runs
+inside Composio's workbench as you (`skills/resume/scripts/cvcheck_workbench.py`), so nothing asks
+you to turn on link sharing. The PDF it measures is deleted in the sandbox and never reaches the
+chat. `cvcheck.sh` is the fallback for sessions without Composio: it only works on a doc you've
+already shared by link, and the kit never asks you to share one to make it work. A doc or PDF is
+shared only when you say yes to sharing it.
 
 **Getting kit updates.** Because your data lives only in `profile/`, you can pull improvements to
 `skills/` from the original template without conflicts:
@@ -131,6 +138,9 @@ Google doc ID or other identifying detail. Then open a PR here.
 ## Tests
 
 ```bash
-python3 tests/test_cv_guard.py      # the resume-safety hook
-python3 scripts/leak_check.py       # no personal data outside profile/
+python3 tests/test_cv_guard.py            # the resume-safety hook
+python3 tests/test_session_meter.py       # the token meter
+python3 tests/test_cvcheck_workbench.py   # the page-fit workbench cell (--rebuild after editing linefit.py)
+python3 tests/test_linkedin_jobs.py       # LinkedIn search filters, offline
+python3 scripts/leak_check.py             # no personal data outside profile/
 ```

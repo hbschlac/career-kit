@@ -18,7 +18,7 @@ whoever owns this copy.** Everything you know about them is in `profile/`. The s
 | Connector | Tools you'd see | Needed by |
 |-----------|-----------------|-----------|
 | Google Docs / Drive | `find_and_replace_doc`, `copy_file`, `download_file_content`, or Composio `GOOGLEDOCS_*` / `GOOGLEDRIVE_*` | `resume` Gates 4–5, `setup` step 1 (every resume in Drive, work samples) |
-| Google Sheets (via Composio) | `COMPOSIO_REMOTE_WORKBENCH`, `GOOGLESHEETS_*` | the tracker (`networking/references/pipeline.md`), `career-review` |
+| Google Sheets (via Composio) | `COMPOSIO_REMOTE_WORKBENCH`, `GOOGLESHEETS_*` | the tracker (`networking/references/pipeline.md`), `career-review`, the resume page-fit check (`skills/resume/scripts/cvcheck_workbench.py`) |
 | Gmail | `search_threads`, `get_thread` | `career-review`, `recruiter-filter` outcome scan, `setup` step 4 voice samples, `networking` follow-ups (read-only, never send) |
 | LinkedIn jobs (bundled) | `mcp__linkedin-jobs__*` | `linkedin-jobs`. Loads from `.mcp.json` when this repo is the project |
 
@@ -27,8 +27,9 @@ whoever owns this copy.** Everything you know about them is in `profile/`. The s
 | When the user says… | Load |
 |---------------------|------|
 | "set me up", "get started", "fill in my profile", "update my profile" | `skills/setup/SKILL.md` |
-| "tailor / update my resume", a job link plus "resume", "cover letter", "use the resume I made for <company>" | `skills/resume/SKILL.md` |
-| "write a note / DM / cold email / intro request / referral ask", "follow up with", "reply to", "networking" | `skills/networking/SKILL.md` |
+| "tailor / update my resume", a job link plus "resume", "cover letter", "use the resume I made for <company>", "edit my resume with this feedback" | `skills/resume/SKILL.md` |
+| a job link plus "make me a resume" / "CV for this", often from the phone | `skills/resume/SKILL.md` → `references/quick-mode.md` |
+| "write a note / DM / cold email / intro request / referral ask", "follow up with", "reply to", "why me", "elevator pitch", "networking" | `skills/networking/SKILL.md` |
 | "job tracker", "pipeline", "log that I applied", "what's in my pipeline" | `skills/networking/references/pipeline.md` |
 | "score my resume against this job", "will this pass the ATS", "did I get rejected" | `skills/recruiter-filter/SKILL.md` |
 | "find roles", "who's hiring", "Boolean search", "companies that just raised" | `skills/job-search/SKILL.md` |
@@ -36,6 +37,7 @@ whoever owns this copy.** Everything you know about them is in `profile/`. The s
 | any other job-posting URL, "fetch this JD" | `skills/job-fetch/SKILL.md` |
 | "does this sound like me", "voice check", "write this in my voice" | `skills/voice/SKILL.md` |
 | "slop check", "does this sound like AI" | `skills/aislop/SKILL.md` |
+| "prep for interview", "practice for <company>", "mock interview", "interview me", "story mapping", "thank-you note", "how did my interview go" | `skills/interview/SKILL.md` |
 | "what should I build for this application" | `skills/project/SKILL.md` |
 | "learn from this", "resume learn" | `skills/resume-learn/SKILL.md` |
 | "weekly review", "check my outcomes", "did anyone reply" | `skills/career-review/SKILL.md` |
@@ -58,8 +60,9 @@ whoever owns this copy.** Everything you know about them is in `profile/`. The s
   asking (`bash skills/resume/scripts/ledger_grep.sh <term> …`), ask once with all the gaps
   batched, and append the answers to `profile/evidence.md` the same turn.
 - **Grep profile files, don't read them whole.** `evidence.md` grows long.
-- **Personal learnings go to `profile/`** (`rules.md`, `voice.md`, `evidence.md`), never into
-  `skills/`. That keeps `skills/` generic, so the user can pull kit updates without conflicts.
+- **Personal learnings go to `profile/`** (`rules.md`, `voice.md`, `evidence.md`,
+  `positioning.md`), never into `skills/`. That keeps `skills/` generic, so the user can pull kit
+  updates without conflicts.
 - **Never a whole-doc or markdown import into a Google Doc.** Copy the base doc, then edit with
   one find→replace per change, `match_case: true`. `cv_guard.py` enforces this.
 - **Keep `profile/` out of anything public.** If the user wants to contribute a skill improvement

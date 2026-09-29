@@ -2,8 +2,8 @@
 """Unit tests for scripts/session_meter.py — run: python3 tests/test_session_meter.py
 
 Feeds the meter a small synthetic transcript and checks the numbers career-review relies on:
-token totals deduped by requestId, the kit skills the session used, and the profile/meter.md
-fallback row for copies without a tracker sheet.
+token totals deduped by requestId, the kit skills the session used, the profile/meter.md
+fallback row for copies without a tracker sheet, and page-fit runs made in Composio's workbench.
 """
 import importlib.util
 import json
@@ -76,6 +76,15 @@ with tempfile.TemporaryDirectory() as tmp:
     check("the row carries the session id, skills and token counts", "| abcdef12 | resume, recruiter-filter | 3 |" in rows[0]
           and "| 18 |" in rows[0])
     check("the row holds counts only, no transcript text", "tailor my resume" not in body)
+
+# The page-fit check for a private resume runs as CVFIT_<id>(...) inside Composio's workbench
+WB = "mcp__Composio_Docs_Drive__COMPOSIO_REMOTE_WORKBENCH"
+cell = (ROOT / "skills" / "resume" / "scripts" / "cvcheck_workbench.py").read_text(encoding="utf-8")
+runs = lambda code: sm.classify(WB, {"code_to_execute": code}).count("cvcheck_runs")
+check("each CVFIT_<id>(...) call in workbench code counts as a cvcheck run",
+      runs('print(CVFIT_3f9a2c("<DOC_ID>"))\nCVFIT_3f9a2c("<DOC_ID>", over=3)') == 2)
+check("sending the cell itself, a commented call or a bare cvfit() counts none",
+      runs(cell) == 0 and runs('# CVFIT_3f9a2c("<DOC_ID>")\ncvfit("<DOC_ID>")') == 0)
 
 print()
 if failures:

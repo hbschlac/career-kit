@@ -12,7 +12,8 @@ RULES = (
     "- Personal facts live ONLY in profile/. Never invent a fact; grep profile/ first "
     "(`bash skills/resume/scripts/ledger_grep.sh <term>`), then ask the user once, batched.\n"
     "- CV work: follow skills/resume/SKILL.md one gate at a time; never pull a PDF into the chat "
-    "(`bash skills/resume/scripts/cvcheck.sh <DOC_ID>`).\n"
+    "(page fit: `CVFIT_<id>` from skills/resume/scripts/cvcheck_workbench.py); never share a doc "
+    "to make a check work.\n"
     "- Tracker sheet: never read a whole tab; use skills/networking/scripts/pipeline_workbench.py."
 )
 

@@ -20,9 +20,9 @@ rm ~/.claude/cv-guard/allow-download         # 3. close it again
 - Name it `<config.name> - Resume - <Company>.pdf` (e.g. `Jordan Lee - Resume - Acme Corp.pdf`),
   using `name` from `profile/config.json`. Recruiters see the filename; keep it clean, no
   "v3-final".
-- Run the line check on that file before handing it over:
-  `python3 skills/resume/scripts/linefit.py "<file.pdf>" --over 2`. Exit 0 = one page and no
-  bullet over two lines.
+- Check page fit before exporting: `CVFIT_<id>("<DOC_ID>")` (`step4-apply.md` → *After the
+  round*). Without Composio, run `python3 skills/resume/scripts/linefit.py "<file.pdf>" --over 2`
+  on the exported file. Exit 0 = one page and no bullet over two lines.
 - Hand the user the file path (or the Drive download, depending on the session) and say it's
   ready to attach.
 
@@ -36,6 +36,7 @@ Only if the user wants a link (for outreach, a referral, a character-capped note
 **A direct Google Doc link.** Use the `/preview` view, not `/edit`:
 `https://docs.google.com/document/d/<DOC_ID>/preview`, read-only with no editor chrome. The doc
 must be shared *Anyone with the link: Viewer*, or every click lands on a request-access screen.
+Share it only on the user's explicit yes, for sharing; never to make a check work.
 
 **Verify rather than trusting the share dialog.** Don't use `get_file_permissions` for this: it
 returns only permissions set on the file itself, so a doc that is public because its parent folder
