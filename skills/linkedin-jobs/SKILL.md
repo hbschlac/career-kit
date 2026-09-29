@@ -20,8 +20,10 @@ One path from "I found it on LinkedIn" to a tracked role with a tailored CV. The
 It reads the pages LinkedIn serves to **logged-out** visitors
 (`linkedin.com/jobs-guest/jobs/api/...`). No cookies, no login, no LinkedIn account — nothing it
 does is tied to the user's profile. The one real limit is rate: LinkedIn answers bursts with
-**429**. The server pauses 1.5s between pages and caps a call at 100 results. On a 429, stop and
-tell the user. Don't retry in a loop, and don't scrape people or profiles with it. Job postings only.
+**429**. The server pauses 1.5s between pages and 2.5s between postings it reads to filter, and
+caps a call at 100 results. On a 429 a filtered search returns what it kept so far with
+`screened.stopped` saying why; stop and tell the user. Don't retry in a loop, and don't scrape
+people or profiles with it. Job postings only.
 
 ## Step 0 — pick the backend (first one that works, one try each)
 
@@ -48,22 +50,42 @@ tell the user. Don't retry in a loop, and don't scrape people or profiles with i
 ### Search — "find X roles on LinkedIn"
 
 `linkedin_search_jobs` / `server.py search`. When the user doesn't say, default to their usual cut
-from `profile/targets.md` (target titles as keywords, allowed locations, the experience levels that
-match their seniority), plus `posted_within: week`, `sort: recent`, `limit: 25`. If
-`profile/targets.md` is empty, ask for keywords and location rather than guessing.
+from `profile/targets.md`: target titles as keywords, allowed locations, their years of experience
+as `years` (and the most a posting can ask for as `max_years_asked`), their target industries as
+`industries`, their compensation floor as `min_salary`, plus `posted_within: week`, `sort: recent`,
+`limit: 25`. If `profile/targets.md` is empty, ask for keywords and location rather than guessing.
 
-| Arg | Values |
-|-----|--------|
-| `keywords` | free text; LinkedIn Boolean works (`"product designer" AND (fintech OR payments)`) — see `skills/job-search/references/boolean-templates.md` |
-| `location` | `United States`, `New York, NY`, `London, England`, `Chicago, IL`, ... |
-| `posted_within` | `24h` `week` `month` `any` |
-| `experience` | `internship` `entry` `associate` `mid-senior` `director` `executive` |
-| `workplace` | `onsite` `remote` `hybrid` |
-| `job_type` | `full-time` `part-time` `contract` `temporary` `internship` |
-| `company_ids` | LinkedIn numeric company ids |
-| `start` | pass `next_start` from the last call for the next page |
+**LinkedIn's public search only honors keywords, location and posted-within** (checked 2026-09-29:
+the same jobs come back with or without its experience, remote, industry, function and pay
+filters). So every other filter below is applied by the server itself: it reads each posting and
+keeps the ones that match. That costs about 3 seconds a posting, so a filtered search reads at most
+`check_limit` postings (15 by default, 40 max) and says so in `screened.stopped` when it hits that.
 
-Show results as a compact table (# · Title · Company · Location · Posted · id). Flag roles already
+| Arg | Values | How it's applied |
+|-----|--------|------------------|
+| `keywords` | free text; LinkedIn Boolean works (`"product designer" AND (fintech OR payments)`) — see `skills/job-search/references/boolean-templates.md` | by LinkedIn |
+| `location` | `United States`, `New York, NY`, `London, England`, `Chicago, IL`, ... | by LinkedIn |
+| `posted_within` | `24h` `week` `month` `any` | by LinkedIn |
+| `years` | the user's years of relevant experience, e.g. `6`. Picks the seniority levels that usually fit (6 → mid-senior; 12 → mid-senior + director) unless `experience` is given | posting's seniority |
+| `max_years_asked` | drop postings that ask for more years than this. Set it a year or two above `years`: "5+ years" postings often hire at 4 | read from the description |
+| `experience` | `internship` `entry` `associate` `mid-senior` `director` `executive` (list or comma string) | posting's seniority |
+| `industries` | words to match in the posting's LinkedIn industry, e.g. `["software", "financial", "health"]` | posting's industry |
+| `functions` | words to match in its job function, e.g. `["product management"]` | posting's function |
+| `min_salary` | yearly pay floor. Drops postings whose posted range tops out below it; hourly is counted at 2,080 hours | posted pay |
+| `workplace` | `onsite` `remote` `hybrid` | guessed from location, title and description |
+| `job_type` | `full-time` `part-time` `contract` `temporary` `internship` | posting's employment type |
+| `company_ids` | LinkedIn numeric company ids | by LinkedIn |
+| `check_limit` | most postings to read when filtering | — |
+| `start` | pass `next_start` from the last call for the next page. It starts at the first posting this call didn't read, so paging never skips one | — |
+
+A posting that doesn't say (no pay listed, seniority "Not Applicable", no years in the text) is
+**kept** and marked `unknown: [...]`: missing is not a no. Mention those marks in the table. Every
+dropped posting comes back in `screened.dropped` with the reason ("asks for 10+ years",
+"industries is Banking"); offer that list in one line ("dropped 7: 4 too senior, 2 other
+industries, 1 closed") rather than hiding it, since a wrong filter is how good roles get missed.
+
+Show results as a compact table (# · Title · Company · Location · Posted · id, plus Level · Years
+asked · Pay when the search was filtered). Flag roles already
 in Pipeline (`find([...])` with the workbench helpers) and anything that matches the user's target
 in `profile/targets.md`. Apply the location and experience filters in
 `skills/job-search/references/target-criteria.md` once you have pulled the JD — the card's

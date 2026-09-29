@@ -24,7 +24,9 @@ If `profile/targets.md` is missing, empty, or still has template placeholders (`
 Then read what the task needs:
 
 - **Searches / Boolean strings:** `references/boolean-templates.md` — platform templates and syntax rules
-- **To actually run a LinkedIn Jobs search** (not just build the string): the **linkedin-jobs** skill / `linkedin_search_jobs` MCP tool returns real postings you can pull and track — `skills/linkedin-jobs/SKILL.md`
+- **To actually run a LinkedIn Jobs search** (not just build the string): the **linkedin-jobs** skill / `linkedin_search_jobs` MCP tool returns real postings you can pull and track — `skills/linkedin-jobs/SKILL.md`. Pass the user's
+  `years`, `max_years_asked` and `industries` from `profile/targets.md`: the tool reads each posting
+  to apply them, because LinkedIn's public search ignores those filters
 - **X-Ray / platform tricks / alerts:** `references/platform-guide.md` — ATS URLs, LinkedIn URL filters, top sites, automation
 - **Scouting growing companies:** `references/growth-signals.md` — funding queries, signal types, fit scoring
 - **How to define targets:** `references/target-criteria.md` — the guide, plus the location and experience filters applied to every search
@@ -166,7 +168,7 @@ Examples below use fictional companies.
 | # | Name | Title | Company | Hook |
 |---|------|-------|---------|------|
 | 1 | Jordan Lee | Director of Engineering | Globex | Same school, 2 shared connections |
-| 2 | Sam Rivera | Technical Recruiter | Globex | Posts about the team's hiring |
+| 2 | Casey Rivera | Technical Recruiter | Globex | Posts about the team's hiring |
 ```
 
 ### Tracker Display

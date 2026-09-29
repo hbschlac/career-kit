@@ -93,6 +93,16 @@ users, revenue, time saved, percent change, before/after. Append their answers t
 `(source: user, <date>)`. It is fine to leave gaps; the resume skill will ask again when a job
 needs that fact.
 
+## Step 3b — Positioning: which story leads for which role
+
+Fill `profile/positioning.md`: one section per role family in `profile/targets.md` (two or three
+is typical; merge titles that hire for the same problem). For each, from the story bank and the
+ledger, draft what these teams hire to fix, the story to lead with and why, 2–3 proof points with
+numbers, a one-line "why me", the words their postings use, and what to downplay. Show the user
+the sections in one message and ask: "Is this how you'd pitch yourself for each? What's off?" Fix
+what they flag. Every skill that pitches them reads this file, and it keeps learning: each
+tailored resume, message and interview adds a line to that family's log.
+
 ## Step 4 — Voice
 
 Ask for 3–5 things they wrote themselves with no AI help: a cover letter, a cold email, a
@@ -127,7 +137,10 @@ send, label or delete. Docs from Step 1's work samples that they wrote themselve
 4. Close with a short "what you can do now" list, in plain words:
    - "Here's a job link, tailor my resume" → `resume`
    - "Write a note to <person> at <company>" → `networking`
+   - "Why me for <role or person>, in three sentences" → `networking`
    - "Score my resume against this job" → `recruiter-filter`
+   - "Prep me for my interview at <company>" → `interview`
+   - On the phone: paste a job link and say "make me a resume" → `resume` (quick mode)
    - "Find me roles like X" → `job-search` / `linkedin-jobs`
    - "Does this sound like me?" → `voice`
    - "Learn from this session" after correcting a draft → `resume-learn`

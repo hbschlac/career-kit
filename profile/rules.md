@@ -12,3 +12,6 @@ Format: `- <rule> (why) — <YYYY-MM-DD>`
 
 ## Naming (what to call things)
 - <e.g. Call the internal tool "the pricing engine", never its code name.>
+
+## Interview
+- <e.g. In a mock, give feedback after every answer, not at the end.>

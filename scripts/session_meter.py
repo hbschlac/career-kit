@@ -48,6 +48,11 @@ WORKBENCH_SLUGS = {
     "GOOGLEDOCS_GET_DOCUMENT_BY_ID": "readbacks",
     "GOOGLEDRIVE_DOWNLOAD_FILE": "sandbox_exports",
 }
+# CVFIT_<id>("<DOC_ID>") in workbench code is cvcheck.sh's check run inside Composio's sandbox, for
+# a private resume (skills/resume/scripts/cvcheck_workbench.py binds it under that code-hashed name),
+# so each call is a cvcheck run. Comment lines do not count, so sending the cell itself counts 0; a
+# bare cvfit( is another session's name, never counted.
+CVFIT_CALL = re.compile(r"(?<![\w.])CVFIT_[0-9a-f]{6}\(")
 
 
 def classify(name, inp):
@@ -58,6 +63,8 @@ def classify(name, inp):
         code = str(inp.get("code_to_execute") or "")
         for slug, cat in WORKBENCH_SLUGS.items():
             cats.extend([cat] * code.count(f'"{slug}"'))
+        cats.extend(["cvcheck_runs"] * sum(len(CVFIT_CALL.findall(line)) for line in code.splitlines()
+                                           if not line.lstrip().startswith("#")))
         if "GOOGLESHEETS" in code:
             cats.append("sheet_calls")
     elif n == "Bash" and isinstance(inp, dict) and re.search(
